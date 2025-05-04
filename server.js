@@ -1,20 +1,20 @@
-// server.js
 
 const express = require("express");
 const http = require("http");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
-const { Server } = require("socket.io");
+// const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken"); 
 const cors = require("cors");
 
 const User = require("./models/user");
-const Chat = require("./models/message");
 
 const authRoutes = require("./routes/authRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const skillPostRoutes = require("./routes/skillPost");
-const messageRoutes = require('./routes/messageRoutes');
+
+const {Server} = require("socket.io");
+const socketHandler = require("./socket");
 
 dotenv.config();
 
@@ -22,6 +22,14 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin:"*",
+    methods: ["GET", "POST"]
+  }
+});
+socketHandler(io);
 
 
 
@@ -48,8 +56,8 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/posts", skillPostRoutes);
 
 
-app.use('/api/messages', messageRoutes);
+// app.use('/api/messages', messageRoutes);
 // ========== START SERVER ==========
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

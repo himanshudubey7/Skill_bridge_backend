@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Skill Bridge Chat</title>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0f0f0f;
+      color: #ffffff;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: linear-gradient(145deg, #1c1c1c, #0f0f0f);
+      padding: 25px;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 0 15px rgba(0,255,255,0.1),
+                  0 0 25px rgba(0,255,255,0.05),
+                  0 0 5px rgba(0,255,255,0.2);
+      border: 1px solid rgba(0,255,255,0.15);
+      animation: pulseGlow 4s infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% {
+        box-shadow: 0 0 15px rgba(0,255,255,0.1),
+                    0 0 25px rgba(0,255,255,0.05),
+                    0 0 5px rgba(0,255,255,0.2);
+      }
+      50% {
+        box-shadow: 0 0 20px rgba(0,255,255,0.3),
+                    0 0 35px rgba(0,255,255,0.1),
+                    0 0 10px rgba(0,255,255,0.4);
+      }
+    }
+
+    h2 {
+      color: #00ffff;
+      text-align: center;
+      text-shadow: 0 0 10px rgba(0,255,255,0.6);
+    }
+
+    input, textarea, button {
+      width: 100%;
+      margin-top: 12px;
+      padding: 12px;
+      background-color: #1a1a1a;
+      border: 1px solid rgba(0,255,255,0.3);
+      border-radius: 6px;
+      color: white;
+      font-size: 1rem;
+      outline: none;
+      transition: border 0.3s, box-shadow 0.3s;
+    }
+
+    input:focus, textarea:focus {
+      border: 1px solid #00ffff;
+      box-shadow: 0 0 8px rgba(0,255,255,0.6);
+    }
+
+    button {
+      background-color: #00ffff;
+      color: #0f0f0f;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+
+    button:hover {
+      background-color: #00e5e5;
+      transform: scale(1.03);
+    }
+
+    .messages {
+      margin-top: 20px;
+      background-color: #141414;
+      padding: 12px;
+      height: 220px;
+      overflow-y: auto;
+      border-radius: 8px;
+      box-shadow: inset 0 0 10px rgba(0,255,255,0.1);
+    }
+
+    .message {
+      padding: 8px 0;
+      border-bottom: 1px dashed #333;
+      font-size: 0.95rem;
+    }
+
+    .message:last-child {
+      border-bottom: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>🌐 Skill Bridge Chat</h2>
+    <input type="text" id="token" placeholder="Paste JWT Token" />
+    <button onclick="connectSocket()">Connect</button>
+
+    <input type="text" id="receiverId" placeholder="Receiver User ID" />
+    <textarea id="message" placeholder="Type your message here..."></textarea>
+    <button onclick="sendMessage()">Send Message</button>
+
+    <div class="messages" id="messages"></div>
+  </div>
+
+  <script>
+    let socket;
+
+    function connectSocket() {
+      const token = document.getElementById("token").value;
+
+      socket = io("http://localhost:5000", {
+        auth: { token }
+      });
+
+      socket.on("connect", () => {
+        alert("✅ Connected to WebSocket");
+        console.log("Socket ID:", socket.id);
+      });
+
+      socket.on("connect_error", (err) => {
+        alert("❌ Connection Error: " + err.message);
+        console.error(err);
+      });
+
+      socket.on("receive_message", ({ from, message }) => {
+        const messageContainer = document.getElementById("messages");
+        const msg = document.createElement("div");
+        msg.classList.add("message");
+        msg.innerText = `📩 Message from ${from}: ${message}`;
+        messageContainer.appendChild(msg);
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+      });
+    }
+
+    function sendMessage() {
+      const to = document.getElementById("receiverId").value;
+      const message = document.getElementById("message").value;
+
+      if (!socket || !socket.connected) {
+        alert("Socket not connected");
+        return;
+      }
+
+      socket.emit("send_message", { to, message });
+
+      const messageContainer = document.getElementById("messages");
+      const msg = document.createElement("div");
+      msg.classList.add("message");
+      msg.innerText = `📤 You to ${to}: ${message}`;
+      messageContainer.appendChild(msg);
+      messageContainer.scrollTop = messageContainer.scrollHeight;
+
+      document.getElementById("message").value = "";
+    }
+  </script>
+
+</body>
+</html>
