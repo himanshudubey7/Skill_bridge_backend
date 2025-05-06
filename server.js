@@ -15,6 +15,7 @@ const skillPostRoutes = require("./routes/skillPost");
 
 const {Server} = require("socket.io");
 const socketHandler = require("./socket");
+const authMiddleware = require("./middleware/authMiddleware");
 
 dotenv.config();
 
@@ -54,7 +55,15 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/posts", skillPostRoutes);
-
+app.get('/api/messages/:userId',authMiddleware,async(req,res)=>{
+  const messages = await Message.find({
+    $or:[
+      {from: req.user.id, to: req.params.userId},
+      {from: req.params.userId, to:req.user.id}
+    ]
+  }).sort({timestamp:1});
+  res.json(messages);
+})
 
 // app.use('/api/messages', messageRoutes);
 // ========== START SERVER ==========

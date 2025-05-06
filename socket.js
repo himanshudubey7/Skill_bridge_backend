@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { connect } = require('mongoose');
 const connectedUsers = new Map();
+const Message = require('./models/message');
 
 function socketHandler(io){
     io.use((socket,next)=>{
@@ -31,9 +32,11 @@ function socketHandler(io){
 
         });
 
-        socket.on("send_message", ({to , message})=>{
+        socket.on("send_message", async({to , message})=>{
             const from = socket.user.userId;
             const receiverSocketId = connectedUsers.get(to);
+
+            await Message.create({from,to,message});
 
             if(receiverSocketId){
                 io.to(receiverSocketId).emit("receive_message", {from, message});
